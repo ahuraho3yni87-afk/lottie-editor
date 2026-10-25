@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ویرایشگر Lottie / TGS</title>
+<style>
+:root{--bg:#f4f4f2;--card:#fff;--tx:#1b1b1b;--mu:#707070;--bd:#d9d9d9;--ac:#5b5bf0;--ok:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151515;--card:#222;--tx:#eee;--mu:#9a9a9a;--bd:#3b3b3b;--ac:#8c8cff}}
+:root[data-theme="dark"]{--bg:#151515;--card:#222;--tx:#eee;--mu:#9a9a9a;--bd:#3b3b3b;--ac:#8c8cff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.6 system-ui,Tahoma,sans-serif}
+h1{font-size:17px;margin:0}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px}
+.wrap{display:grid;gap:12px;padding:0 12px 16px;grid-template-columns:1fr}
+@media(min-width:860px){.wrap{grid-template-columns:minmax(0,1fr) 340px;align-items:start}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.card h2{font-size:13px;margin:0 0 8px;color:var(--mu);font-weight:600}
+button,.btn{font:inherit;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;cursor:pointer;display:inline-block}
+button:hover,.btn:hover{border-color:var(--ac)}
+.pri{background:var(--ac);color:var(--ok);border-color:var(--ac)}
+#stagebox{position:relative;border-radius:10px;overflow:hidden;min-height:260px;background-color:#fff;background-image:linear-gradient(45deg,#0001 25%,transparent 25%,transparent 75%,#0001 75%),linear-gradient(45deg,#0001 25%,transparent 25%,transparent 75%,#0001 75%);background-size:20px 20px;background-position:0 0,10px 10px;direction:ltr;cursor:crosshair}
+#anim{width:100%;max-width:520px;margin:0 auto}
+#sel{position:absolute;pointer-events:none;border:2px solid #f0386b;border-radius:3px;display:none;box-shadow:0 0 0 1px #fff8}
+#hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#555;padding:20px;pointer-events:none}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.row input[type=range]{flex:1;min-width:120px}
+#layers{max-height:240px;overflow:auto;border:1px solid var(--bd);border-radius:8px}
+.ly{display:flex;justify-content:space-between;gap:6px;width:100%;border:0;border-bottom:1px solid var(--bd);border-radius:0;text-align:right;padding:4px 8px}
+.ly.on{background:var(--ac);color:var(--ok)}
+.ly small{opacity:.7}
+.sw{display:flex;align-items:center;gap:8px;margin:4px 0}
+.sw input{width:36px;height:28px;padding:0;border:1px solid var(--bd);border-radius:6px;background:none}
+.sw span{flex:1;font-size:12px}
+.pal{display:flex;flex-wrap:wrap;gap:6px}
+.pal input{width:34px;height:34px;padding:0;border:1px solid var(--bd);border-radius:8px;background:none}
+.mu{color:var(--mu);font-size:12px}
+.num{width:64px;padding:2px 4px;font:inherit}
+select,input[type=text]{font:inherit;padding:3px 6px}
+#tl{position:relative;direction:ltr;max-height:190px;overflow:auto;margin-top:8px;border:1px solid var(--bd);border-radius:8px}
+.tr{height:16px;position:relative;border-bottom:1px solid var(--bd)}
+.bar{position:absolute;top:2px;height:12px;background:var(--mu);opacity:.55;border-radius:3px;font-size:9px;line-height:12px;overflow:hidden;white-space:nowrap;cursor:pointer;color:var(--card);padding:0 3px}
+.bar.on{background:var(--ac);opacity:1}
+#ph{position:absolute;top:0;bottom:0;width:2px;background:#f0386b;z-index:2;pointer-events:none}
+#drop.over #stagebox{outline:3px dashed var(--ac)}
+.lg{width:56px;height:56px;border:1px solid var(--bd);border-radius:8px;background:#fff center/contain no-repeat;position:relative;cursor:pointer}
+.lg:hover{border-color:var(--ac)}
+.lg b{position:absolute;top:-6px;left:-6px;width:18px;height:18px;border-radius:50%;background:#e5484d;color:#fff;font-size:12px;line-height:18px;text-align:center}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>ویرایشگر Lottie / TGS</h1>
+  <div class="row" style="margin:0">
+    <label class="btn pri">باز کردن فایل (json / tgs)<input id="file" type="file" accept=".json,.tgs,.lottie,application/json" hidden></label>
+    <button id="undo" title="Ctrl+Z">↶ برگردان</button><button id="redo" title="Ctrl+Shift+Z">↷</button><button id="reset">بازنشانی</button>
+    <button id="exJson">ذخیره JSON</button>
+    <button id="exTgs">ذخیره TGS</button><button id="exTxt">ذخیره .txt</button><button id="exCopy">کپی JSON</button>
+  </div>
+</div>
+<div class="wrap" id="drop">
+  <div class="card">
+    <div id="stagebox">
+      <div id="anim"></div>
+      <div id="sel"></div>
+      <div id="hint">فایل را اینجا بکش و رها کن، یا از دکمهٔ بالا انتخاب کن.<br>بعد روی هر بخش انیمیشن کلیک کن تا همان لایه انتخاب شود.</div>
+    </div>
+    <div class="row">
+      <button id="play">⏯</button>
+      <input id="fr" type="range" min="0" max="100" step="1" value="0">
+      <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+      <label><input id="loop" type="checkbox" checked> لوپ</label>
+      <label>پس‌زمینه <input id="bg" type="color" value="#ffffff"></label>
+    </div>
+    <div id="msg" class="mu" style="margin-top:6px"></div>
+    <div id="tl"></div>
+  </div>
+  <div style="display:grid;gap:12px">
+    <div class="card"><h2>لایه‌ها</h2><div id="layers" class="mu" style="padding:8px">هنوز فایلی باز نشده.</div></div>
+    <div class="card"><h2>کتابخانهٔ لوگو (تا ۵ فایل SVG)</h2>
+      <label class="btn pri">اضافه کردن SVG‌ها<input id="libFile" type="file" accept=".svg,image/svg+xml" multiple hidden></label>
+      <div id="lib" class="pal" style="margin-top:8px"></div>
+      <div class="mu" style="margin-top:6px">یک لایه را انتخاب کن، بعد روی لوگو بزن تا جایگزین شود. همان لوگو را می‌شود روی چند لایه هم گذاشت.</div></div>
+    <div class="card" id="selCard"><h2>لایهٔ انتخاب‌شده</h2><div id="selInfo" class="mu">یک لایه انتخاب کن.</div></div>
+    <div class="card"><h2>رنگ‌های کل انیمیشن (تغییر همه‌جا)</h2><div id="pal" class="pal"><span class="mu">—</span></div></div>
+    <div class="card"><h2>تنظیمات کامپوزیشن</h2><div id="comp"></div></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const TYPES = {0:'کامپ',1:'سالید',2:'تصویر',3:'نال',4:'شکل',5:'متن'};
+let model = null, orig = '', anim = null, entries = [], sel = null, fit = 1, panelsOnReady = true;
+const logos = new WeakMap();
+
+/* ---------- load ---------- */
+async function loadFile(f){
+  try{
+    const buf = new Uint8Array(await f.arrayBuffer());
+    const txt = (buf[0]===0x1f && buf[1]===0x8b) ? pako.ungzip(buf,{to:'string'}) : new TextDecoder().decode(buf);
+    model = JSON.parse(txt);
+    if(!model.layers) throw 0;
+  }catch(e){ say('فایل معتبر نیست.'); return; }
+  orig = JSON.stringify(model); sel = null; $('hint').style.display='none';
+  build(0,true,true);
+}
+function say(t){ $('msg').textContent = t; }
+
+function build(frame, playing, panels){
+  const wasPlaying = anim ? !anim.isPaused : playing;
+  if(anim) anim.destroy();
+  panelsOnReady = panels !== false;
+  let a;
+  try{ a = lottie.loadAnimation({container:$('anim'),renderer:'svg',loop:$('loop').checked,autoplay:false,animationData:JSON.parse(JSON.stringify(model))}); }
+  catch(err){ anim = null; say('رندر با این تغییر ممکن نشد؛ برگردانده شد.'); undo(); return; }
+  anim = a;
+  let done = false;
+  const ready = () => {
+    if(done || anim !== a) return; done = true;
+    a.setSpeed(+$('speed').value);
+    $('fr').max = Math.max(1, Math.floor(a.totalFrames-1));
+    mapEntries();
+    if(frame) a.goToAndStop(frame,true);
+    wasPlaying ? a.play() : a.goToAndStop(frame||0,true);
+    if(panelsOnReady) renderAll();
+  };
+  a.addEventListener('DOMLoaded', ready);
+  a.addEventListener('enterFrame', () => { $('fr').value = a.currentFrame; const ph = $('ph'); if(ph) ph.style.left = (a.currentFrame/Math.max(1,a.totalFrames)*100)+'%'; });
+  if(a.isLoaded) ready();
+}
+
+function mapEntries(){
+  entries = [];
+  const walk = (els, lays, depth) => (els||[]).forEach((el,i) => {
+    const ld = lays && lays[i]; if(!el || !ld) return;
+    entries.push({ld, el: el.layerElement || el.baseElement, depth});
+    if(el.elements && ld.refId){
+      const as = (model.assets||[]).find(x => x.id === ld.refId);
+      if(as && as.layers) walk(el.elements, as.layers, depth+1);
+    }
+  });
+  walk(anim.renderer.elements, model.layers, 0);
+}
+
+/* ---------- click to select layer ---------- */
+$('stagebox').addEventListener('click', e => {
+  if(!anim) return;
+  let found = null;
+  for(const t of document.elementsFromPoint(e.clientX, e.clientY)){
+    const c = entries.filter(en => en.el && en.el.contains && en.el.contains(t));
+    if(c.length){ found = c.reduce((a,b) => b.depth >= a.depth ? b : a); break; }
+  }
+  if(!found){
+    let best = 1e12;
+    entries.forEach(en => {
+      if(!en.el || !en.el.getBoundingClientRect) return;
+      const r = en.el.getBoundingClientRect(), ar = r.width*r.height;
+      if(ar > 0 && e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom && ar < best){ best = ar; found = en; }
+    });
+  }
+  if(found){ sel = found.ld; renderAll(); const b = document.querySelector('.ly.on'); if(b) b.scrollIntoView({block:'nearest'}); }
+});
+(function tick(){
+  const box = $('sel'), en = sel && entries.find(x => x.ld === sel);
+  if(en && en.el && en.el.isConnected){
+    const r = en.el.getBoundingClientRect(), b = $('stagebox').getBoundingClientRect();
+    if(r.width>0){ Object.assign(box.style,{display:'block',left:(r.left-b.left)+'px',top:(r.top-b.top)+'px',width:r.width+'px',height:r.height+'px'}); }
+    else box.style.display='none';
+  } else box.style.display='none';
+  requestAnimationFrame(tick);
+})();
+
+/* ---------- colors ---------- */
+const toHex = v => '#' + v.slice(0,3).map(x => { const n = Math.round(Math.max(0,Math.min(255,x*(v.slice(0,3).some(y=>y>1)?1:255)))); return n.toString(16).padStart(2,'0'); }).join('');
+const fromHex = (h, big) => [1,3,5].map(i => parseInt(h.substr(i,2),16) / (big ? 1 : 255));
+const getC = c => toHex(c.a===1 ? c.k[0].s : c.k);
+function setC(c, h){
+  const cur = c.a===1 ? c.k[0].s : c.k, big = cur.slice(0,3).some(y => y>1), v = fromHex(h,big);
+  const mk = old => (old && old.length>3) ? [...v, old[3]] : v;
+  if(c.a===1) c.k.forEach(kf => { if(kf.s) kf.s = mk(kf.s); if(kf.e) kf.e = mk(kf.e); });
+  else c.k = mk(c.k);
+}
+function collect(ld){
+  const out = [];
+  if(ld.ty===1 && typeof ld.sc==='string') out.push({label:'رنگ سالید', get:()=>ld.sc, set:h=>{ld.sc=h}});
+  const rec = (arr, pre) => (arr||[]).forEach(it => {
+    if(it.ty==='gr') rec(it.it, it.nm || 'گروه');
+    else if((it.ty==='fl'||it.ty==='st') && it.c && Array.isArray(it.c.k) && (it.c.a===1 ? it.c.k[0] && it.c.k[0].s : true))
+      out.push({label:(pre?pre+' › ':'')+(it.ty==='fl'?'پر':'خط')+(it.nm?' ('+it.nm+')':''), get:()=>getC(it.c), set:h=>setC(it.c,h)});
+  });
+  rec(ld.shapes,'');
+  return out;
+}
+const allLists = () => [model.layers, ...(model.assets||[]).filter(a=>a.layers).map(a=>a.layers)];
+function frameNow(){ return anim ? anim.currentFrame : 0; }
+
+/* ---------- panels ---------- */
+function renderAll(){ renderLayers(); renderSel(); renderPal(); renderTl(); renderComp(); }
+
+function renderLayers(){
+  const box = $('layers'); box.innerHTML = ''; box.className = '';
+  const seen = new Set();
+  const rec = (lays, depth) => lays.forEach((ld,i) => {
+    const b = document.createElement('button');
+    b.className = 'ly' + (ld === sel ? ' on' : '');
+    b.style.paddingRight = (8 + depth*14) + 'px';
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = (ld.hd ? '🚫 ' : '') + (ld.nm || 'لایه ' + (i+1));
+    b.lastChild.textContent = TYPES[ld.ty] || ld.ty;
+    b.onclick = () => { sel = ld; renderAll(); };
+    box.appendChild(b);
+    if(ld.ty===0 && ld.refId && !seen.has(ld.refId)){
+      const as = (model.assets||[]).find(x => x.id === ld.refId);
+      if(as && as.layers){ seen.add(ld.refId); rec(as.layers, depth+1); seen.delete(ld.refId); }
+    }
+  });
+  rec(model.layers, 0);
+}
+
+function renderSel(){
+  const box = $('selInfo'); box.innerHTML = '';
+  if(!sel){ box.className='mu'; box.textContent='یک لایه انتخاب کن (از لیست یا با کلیک روی انیمیشن).'; return; }
+  box.className = '';
+  const t = document.createElement('div'); t.style.fontWeight = 600;
+  t.textContent = (sel.nm || 'بدون نام') + ' — ' + (TYPES[sel.ty]||sel.ty); box.appendChild(t);
+  const cols = collect(sel);
+  if(cols.length){
+    cols.forEach(c => {
+      const d = document.createElement('div'); d.className = 'sw';
+      d.innerHTML = '<input type="color"><span></span>';
+      d.firstChild.value = c.get(); d.lastChild.textContent = c.label;
+      d.firstChild.oninput = e => { c.set(e.target.value); build(frameNow(), false, false); };
+      d.firstChild.onfocus = pushHist; d.firstChild.onchange = () => { renderPal(); };
+      box.appendChild(d);
+    });
+  } else { const m = document.createElement('div'); m.className='mu'; m.textContent='این لایه رنگ قابل ویرایش ندارد.'; box.appendChild(m); }
+  const r1 = document.createElement('div'); r1.className = 'row';
+  r1.innerHTML = '<label class="btn pri">جایگزینی با لوگو<input type="file" accept="image/*" hidden></label>';
+  r1.querySelector('input').onchange = e => { if(e.target.files[0]) replaceLogo(e.target.files[0]); e.target.value=''; };
+  box.appendChild(r1);
+  const r2 = document.createElement('div'); r2.className = 'row';
+  r2.innerHTML = '<span class="mu">اندازه لوگو</span><input type="range" min="10" max="600" value="'+Math.round(fit*100)+'">';
+  r2.querySelector('input').onpointerdown = pushHist;
+  r2.querySelector('input').oninput = e => { fit = e.target.value/100; const m = logos.get(sel); if(m){ applyLogo(sel,m); build(frameNow(), false, false); } };
+  box.appendChild(r2);
+  logoMoves(box);
+  layerButtons(box);
+  propsPanel(box);
+}
+
+function renderPal(){
+  const box = $('pal'); box.innerHTML = '';
+  const groups = new Map();
+  allLists().forEach(l => l.forEach(ld => collect(ld).forEach(c => {
+    const h = c.get(); if(!groups.has(h)) groups.set(h, []); groups.get(h).push(c);
+  })));
+  if(!groups.size){ box.innerHTML = '<span class="mu">رنگی پیدا نشد.</span>'; return; }
+  [...groups.entries()].slice(0,40).forEach(([h, cs]) => {
+    const i = document.createElement('input'); i.type = 'color'; i.value = h; i.title = cs.length + ' مورد';
+    i.oninput = e => { cs.forEach(c => c.set(e.target.value)); build(frameNow(), false, false); };
+    i.onfocus = pushHist; i.onchange = () => { renderSel(); renderPal(); };
+    box.appendChild(i);
+  });
+}
+
+/* ---------- logo replace ---------- */
+function applyLogo(ld, m){
+  if(m.vec) return applyVec(ld, m);
+  const s = Math.min(m.bb.width/m.iw, m.bb.height/m.ih) * fit, nw = m.iw*s, nh = m.ih*s;
+  let as = (model.assets||[]).find(x => x.id === m.id);
+  if(!as){ as = {id:m.id, u:'', p:m.url, e:1}; (model.assets = model.assets || []).push(as); }
+  as.w = nw; as.h = nh;
+  const tx = m.bb.x + m.bb.width/2 - nw/2 + (m.dx||0), ty = m.bb.y + m.bb.height/2 - nh/2 + (m.dy||0);
+  ld.ks = ld.ks || {};
+  ld.ks.a = {a:0, k:[m.ax - tx, m.ay - ty, 0]};
+  ld.ty = 2; ld.refId = m.id;
+  ['shapes','sc','sw','sh','tm','t'].forEach(k => delete ld[k]);
+}
+function replaceLogo(file){
+  if(sel && (/svg/.test(file.type) || /\.svg$/i.test(file.name))) return vecLogo(sel, file);
+  const ld = sel; if(!ld) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const iw = im.naturalWidth || 300, ih = im.naturalHeight || 300;
+      let m = logos.get(ld);
+      if(m){ m.url = rd.result; m.iw = iw; m.ih = ih; }
+      else {
+        const en = entries.find(x => x.ld === ld);
+        let bb = {x:0,y:0,width:ld.w||100,height:ld.h||100};
+        try{ const b = en.el.getBBox(); if(b.width>0 && b.height>0) bb = {x:b.x,y:b.y,width:b.width,height:b.height}; }catch(e){}
+        const a = ld.ks && ld.ks.a, av = a && (a.a===1 ? a.k[0].s : a.k);
+        m = {url:rd.result, iw, ih, bb, ax: av ? av[0] : 0, ay: av ? av[1] : 0, id:'logo_'+Date.now()};
+        logos.set(ld, m);
+      }
+      if(m.id && (model.assets||[]).find(x => x.id === m.id)) (model.assets.find(x => x.id === m.id)).p = m.url;
+      pushHist(); applyLogo(ld, m);
+      build(frameNow(), false);
+    };
+    im.src = rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+
+/* ---------- history + layer ops ---------- */
+let hist = [], redoS = [];
+function pushHist(){ if(!model) return; const s = JSON.stringify(model); if(hist[hist.length-1] !== s){ hist.push(s); if(hist.length>60) hist.shift(); } redoS = []; }
+function restore(s){ model = JSON.parse(s); sel = null; build(frameNow(), false, true); }
+function undo(){ if(!hist.length) return; redoS.push(JSON.stringify(model)); restore(hist.pop()); }
+function redo(){ if(!redoS.length) return; hist.push(JSON.stringify(model)); restore(redoS.pop()); }
+const parentList = ld => allLists().find(l => l.includes(ld));
+function delLayer(ld){
+  const l = parentList(ld); if(!l) return; pushHist();
+  const i = l.indexOf(ld);
+  if(ld.td && l[i+1]) delete l[i+1].tt;
+  l.forEach(x => { if(ld.ind != null && x.parent === ld.ind) delete x.parent; });
+  l.splice(i,1); sel = null; build(frameNow(), false);
+}
+function dupLayer(ld){
+  const l = parentList(ld); if(!l) return; pushHist();
+  const c = JSON.parse(JSON.stringify(ld));
+  c.ind = Math.max(0, ...l.map(x => x.ind||0)) + 1; c.nm = (ld.nm||'layer') + ' copy'; delete c.td; delete c.tt;
+  l.splice(l.indexOf(ld), 0, c); sel = c; build(frameNow(), false);
+}
+function moveLayer(ld, d){
+  const l = parentList(ld); if(!l) return; const i = l.indexOf(ld), j = i + d;
+  if(j<0 || j>=l.length) return; pushHist(); [l[i], l[j]] = [l[j], l[i]]; build(frameNow(), false);
+}
+const btn = (t, fn) => { const b = document.createElement('button'); b.textContent = t; b.onclick = fn; return b; };
+function layerButtons(box){
+  const ln = document.createElement('div'); ln.className = 'row';
+  ln.innerHTML = '<span class="mu">نام</span><input type="text" style="flex:1;min-width:0">';
+  const ti = ln.querySelector('input'); ti.value = sel.nm || '';
+  ti.onchange = () => { pushHist(); sel.nm = ti.value; renderLayers(); renderTl(); };
+  box.appendChild(ln);
+  const r = document.createElement('div'); r.className = 'row';
+  r.append(btn(sel.hd ? 'نمایش' : 'مخفی', () => { pushHist(); sel.hd = !sel.hd; build(frameNow(), false); }),
+    btn('کپی', () => dupLayer(sel)), btn('↑', () => moveLayer(sel,-1)), btn('↓', () => moveLayer(sel,1)), btn('حذف', () => delLayer(sel)));
+  box.appendChild(r);
+}
+const pGet = p => p && p.k != null ? (p.a===1 ? (p.k[0] && p.k[0].s) : p.k) : null;
+function pSet(p, nv){
+  const cur = pGet(p), isArr = Array.isArray(cur), c = isArr ? cur : [cur];
+  if(p.a===1){
+    const d = nv.map((x,i) => x - (c[i]||0));
+    p.k.forEach(kf => ['s','e'].forEach(k => { if(Array.isArray(kf[k])) kf[k] = kf[k].map((x,i) => x + (d[i]||0)); }));
+  } else p.k = isArr ? nv.concat(cur.slice(nv.length)) : nv[0];
+}
+function fld(box, label, get, set, step){
+  const d = document.createElement('label'); d.className = 'row'; d.style.justifyContent = 'space-between';
+  d.innerHTML = '<span class="mu"></span><span></span>'; d.firstChild.textContent = label;
+  const w = d.lastChild;
+  get().forEach(v => {
+    const n = document.createElement('input'); n.type = 'number'; n.step = step || 1; n.className = 'num'; n.value = Math.round(v*100)/100;
+    n.onchange = () => { pushHist(); set([...w.querySelectorAll('input')].map(x => +x.value)); build(frameNow(), false); };
+    w.appendChild(n);
+  });
+  box.appendChild(d);
+}
+const BM = ['Normal','Multiply','Screen','Overlay','Darken','Lighten','Color Dodge','Color Burn','Hard Light','Soft Light','Difference','Exclusion','Hue','Saturation','Color','Luminosity'];
+function propsPanel(box){
+  const ks = sel.ks || (sel.ks = {});
+  const h = document.createElement('div'); h.className = 'mu'; h.style.marginTop = '8px';
+  h.textContent = 'Transform — روی پراپرتی انیمیت‌شده، همهٔ کی‌فریم‌ها به اندازهٔ تغییر شیفت می‌خورند'; box.appendChild(h);
+  const P = (k, label, n) => { const p = ks[k]; if(!p || p.s || pGet(p) == null) return; fld(box, label, () => { const v = pGet(p); return (Array.isArray(v) ? v : [v]).slice(0,n); }, nv => pSet(p, nv)); };
+  P('o','Opacity %',1); P('r','Rotation °',1); P('s','Scale %',2); P('p','Position',2);
+  const T = (k, label) => fld(box, label, () => [sel[k] ?? 0], nv => { sel[k] = nv[0]; });
+  T('ip','In'); T('op','Out'); T('st','Start');
+  const bm = document.createElement('label'); bm.className = 'row'; bm.style.justifyContent = 'space-between';
+  bm.innerHTML = '<span class="mu">Blend</span><select></select>';
+  const se = bm.querySelector('select'); BM.forEach((n,i) => se.add(new Option(n,i))); se.value = sel.bm || 0;
+  se.onchange = () => { pushHist(); sel.bm = +se.value; build(frameNow(), false); };
+  box.appendChild(bm);
+}
+function renderComp(){
+  const b = $('comp'); b.innerHTML = '';
+  fld(b, 'Size W×H', () => [model.w, model.h], nv => { model.w = nv[0]; model.h = nv[1]; });
+  fld(b, 'FPS', () => [model.fr], nv => { model.fr = nv[0]; });
+  fld(b, 'In / Out', () => [model.ip, model.op], nv => { model.ip = nv[0]; model.op = nv[1]; });
+  const w = [];
+  if(model.w !== 512 || model.h !== 512) w.push('اندازه باید 512×512 باشد');
+  if(![30,60].includes(model.fr)) w.push('FPS باید 30 یا 60 باشد');
+  if((model.op - model.ip) / model.fr > 3) w.push('مدت بیشتر از ۳ ثانیه است');
+  const m = document.createElement('div'); m.className = 'mu'; m.style.marginTop = '6px';
+  m.textContent = w.length ? 'برای استیکر تلگرام: ' + w.join('، ') : 'مشخصات برای استیکر تلگرام (TGS) مناسب است.';
+  const tg = document.createElement('div'); tg.className = 'mu'; tg.style.marginTop = '8px'; b.appendChild(tg); renderTg(tg);
+}
+function renderTl(){
+  const t = $('tl'); t.innerHTML = '<div id="ph"></div>';
+  const a = model.ip || 0, b = model.op || a+1, span = (b-a) || 1;
+  model.layers.forEach(ld => {
+    const r = document.createElement('div'); r.className = 'tr';
+    const bar = document.createElement('div'); bar.className = 'bar' + (ld === sel ? ' on' : '');
+    const s = Math.max(a, ld.ip ?? a), e = Math.min(b, ld.op ?? b);
+    bar.style.left = ((s-a)/span*100) + '%'; bar.style.width = Math.max(0.5, (e-s)/span*100) + '%';
+    bar.textContent = bar.title = ld.nm || ''; bar.onclick = () => { sel = ld; renderAll(); };
+    r.appendChild(bar); t.appendChild(r);
+  });
+}
+$('undo').onclick = undo; $('redo').onclick = redo;
+document.addEventListener('keydown', e => {
+  if(e.target.matches('input,select,textarea')) return;
+  const c = e.ctrlKey || e.metaKey;
+  if(c && e.key.toLowerCase()==='z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  else if(c && e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); }
+  else if((e.key==='Delete' || e.key==='Backspace') && sel){ e.preventDefault(); delLayer(sel); }
+  else if(e.key===' ' && anim){ e.preventDefault(); anim.isPaused ? anim.play() : anim.pause(); }
+});
+
+/* ---------- Telegram check + SVG logo -> vector shapes ---------- */
+function tgCheck(){
+  const w = [], seen = {}, add = k => { if(!seen[k]){ seen[k] = 1; w.push(k); } };
+  if(model.w !== 512 || model.h !== 512) add('اندازه باید 512×512 باشد (الان ' + model.w + '×' + model.h + ')');
+  if(![30,60].includes(model.fr)) add('FPS باید 30 یا 60 باشد');
+  if((model.op - model.ip) / model.fr > 3) add('مدت بیشتر از ۳ ثانیه');
+  const shp = a => (a||[]).forEach(it => {
+    if(it.ty==='sr') add('شکل ستاره'); if(it.ty==='rp') add('Repeater'); if(it.ty==='mm') add('Merge Paths'); if(it.ty==='gs') add('Gradient Stroke');
+    if(it.it) shp(it.it);
+  });
+  allLists().forEach(l => l.forEach(ld => {
+    const n = '«' + (ld.nm || 'layer') + '»';
+    if(ld.ty===2) add('لایهٔ تصویر (تلگرام تصویر رستری نمی‌پذیرد؛ لوگو را SVG بده): ' + n);
+    if(ld.ty===5) add('لایهٔ متن: ' + n);
+    if(ld.bm) add('Blend mode: ' + n);
+    if(ld.ef && ld.ef.length) add('Effect روی ' + n);
+    if(ld.tm) add('Time remap: ' + n);
+    if(ld.ao) add('Auto-orient: ' + n);
+    shp(ld.shapes);
+  }));
+  if(/"x":"/.test(JSON.stringify(model))) add('Expression');
+  const kb = pako.gzip(JSON.stringify(model)).length / 1024;
+  if(kb > 64) add('حجم TGS بیشتر از 64KB (' + kb.toFixed(1) + ' KB)');
+  return w;
+}
+function renderTg(tg){
+  const w = tgCheck(); tg.innerHTML = '';
+  const h = document.createElement('div'); h.style.fontWeight = 600; h.style.color = w.length ? '#e5484d' : '#2a9d4b';
+  h.textContent = w.length ? 'مشکلات سازگاری با تلگرام:' : '✓ مناسب استیکر تلگرام';
+  tg.appendChild(h);
+  w.forEach(x => { const d = document.createElement('div'); d.textContent = '• ' + x; tg.appendChild(d); });
+  if(w.length) tg.appendChild(btn('رفع خودکار (Blend/Effect/Auto-orient/Time remap)', autoFix));
+}
+function autoFix(){
+  pushHist();
+  allLists().forEach(l => l.forEach(ld => { ld.bm = 0; delete ld.ef; ld.ao = 0; delete ld.tm; }));
+  build(frameNow(), false);
+}
+const P0 = k => ({a:0, k});
+function svgToShapes(txt){
+  const host = document.createElement('div'); host.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden';
+  host.innerHTML = txt; document.body.appendChild(host);
+  try{
+    const svg = host.querySelector('svg'); if(!svg) return null;
+    const vb = svg.viewBox.baseVal, hv = vb && vb.width > 0;
+    const iw = hv ? vb.width : (parseFloat(svg.getAttribute('width')) || 300), ih = hv ? vb.height : (parseFloat(svg.getAttribute('height')) || 300);
+    const ox = hv ? vb.x : 0, oy = hv ? vb.y : 0, items = [], inv = svg.getScreenCTM().inverse();
+    svg.querySelectorAll('path,rect,circle,ellipse,polygon,polyline').forEach(el => {
+      if(el.closest('defs,clipPath,mask,symbol')) return;
+      const cs = getComputedStyle(el); if(cs.fill === 'none' || cs.display === 'none') return;
+      const q = cs.fill.startsWith('rgb') ? cs.fill.match(/[\d.]+/g).map(Number) : [136,136,136];
+      const col = [q[0]/255, q[1]/255, q[2]/255, 1], op = (q[3] ?? 1) * parseFloat(cs.fillOpacity) * parseFloat(cs.opacity) * 100;
+      const len = el.getTotalLength(); if(!len) return;
+      const n = Math.min(400, Math.max(32, Math.ceil(len / (Math.max(iw,ih) / 120)))), step = len / n;
+      const M = inv.multiply(el.getScreenCTM()), sc = Math.hypot(M.a, M.b) || 1;
+      const subs = []; let cur = [], prev = null;
+      for(let i = 0; i <= n; i++){
+        const p = el.getPointAtLength(i*step), x = M.a*p.x + M.c*p.y + M.e - ox, y = M.b*p.x + M.d*p.y + M.f - oy;
+        if(prev && Math.hypot(x-prev[0], y-prev[1]) > step*sc*3){ subs.push(cur); cur = []; }
+        cur.push([+x.toFixed(2), +y.toFixed(2)]); prev = [x,y];
+      }
+      subs.push(cur);
+      const it = subs.filter(s => s.length > 2).map(s => ({ty:'sh', ks:{a:0, k:{c:true, v:s, i:s.map(() => [0,0]), o:s.map(() => [0,0])}}}));
+      if(!it.length) return;
+      items.push({ty:'gr', nm:el.id || el.tagName, it:[...it, {ty:'fl', c:P0(col), o:P0(op), r:cs.fillRule==='evenodd'?2:1}, {ty:'tr', p:P0([0,0]), a:P0([0,0]), s:P0([100,100]), r:P0(0), o:P0(100)}]});
+    });
+    return {items:items.reverse(), iw, ih};
+  } finally { host.remove(); }
+}
+function applyVec(ld, m){
+  const s = Math.min(m.bb.width/m.iw, m.bb.height/m.ih) * fit;
+  const tx = m.bb.x + m.bb.width/2 - m.iw*s/2 + (m.dx||0), ty = m.bb.y + m.bb.height/2 - m.ih*s/2 + (m.dy||0);
+  ld.ty = 4; ['refId','sc','sw','sh','tm','t','w','h'].forEach(k => delete ld[k]);
+  ld.shapes = [{ty:'gr', nm:'logo', it:[...m.shapes, {ty:'tr', p:P0([tx,ty]), a:P0([0,0]), s:P0([s*100,s*100]), r:P0(0), o:P0(100), sk:P0(0), sa:P0(0)}]}];
+}
+async function vecLogo(ld, file){
+  let v = null; try{ v = svgToShapes(await file.text()); }catch(e){}
+  if(!v || !v.items.length){ say('SVG خوانده نشد یا شکل قابل تبدیل نداشت.'); return; }
+  let m = logos.get(ld);
+  if(m) Object.assign(m, {vec:true, shapes:v.items, iw:v.iw, ih:v.ih});
+  else {
+    const en = entries.find(x => x.ld === ld); let bb = {x:0, y:0, width:ld.w || 100, height:ld.h || 100};
+    try{ const b = en.el.getBBox(); if(b.width > 0 && b.height > 0) bb = {x:b.x, y:b.y, width:b.width, height:b.height}; }catch(e){}
+    m = {vec:true, shapes:v.items, iw:v.iw, ih:v.ih, bb}; logos.set(ld, m);
+  }
+  pushHist(); applyLogo(ld, m); build(frameNow(), false); say('لوگوی SVG به شکل وکتور تبدیل شد.');
+}
+
+/* ---------- logo library (max 5 SVG) ---------- */
+const libs = [];
+const svgUrl = t => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(t);
+async function addLibs(files){
+  for(const f of files){
+    if(libs.length >= 5){ say('حداکثر ۵ لوگو.'); break; }
+    if(!(/svg/.test(f.type) || /\.svg$/i.test(f.name))){ say('فقط فایل SVG: ' + f.name); continue; }
+    const text = await f.text(); let v = null;
+    try{ v = svgToShapes(text); }catch(e){}
+    if(!v || !v.items.length){ say('SVG قابل تبدیل نبود: ' + f.name); continue; }
+    libs.push({name:f.name, text});
+  }
+  renderLib();
+}
+function useLib(i){
+  if(!sel){ say('اول یک لایه انتخاب کن (از لیست یا کلیک روی انیمیشن).'); return; }
+  vecLogo(sel, {text: async () => libs[i].text});
+}
+function renderLib(){
+  const box = $('lib'); box.innerHTML = '';
+  if(!libs.length){ box.innerHTML = '<span class="mu">هنوز لوگویی اضافه نشده.</span>'; return; }
+  libs.forEach((l, i) => {
+    const d = document.createElement('div'); d.className = 'lg'; d.title = l.name;
+    d.style.backgroundImage = 'url("' + svgUrl(l.text) + '")';
+    d.onclick = () => useLib(i);
+    const x = document.createElement('b'); x.textContent = '×';
+    x.onclick = e => { e.stopPropagation(); libs.splice(i,1); renderLib(); };
+    d.appendChild(x); box.appendChild(d);
+  });
+}
+$('libFile').onchange = e => { addLibs([...e.target.files]); e.target.value = ''; };
+renderLib();
+
+/* ---------- high quality SVG import (bezier + stroke + gradient) + logo move ---------- */
+function logoMoves(box){
+  const m = logos.get(sel); if(!m) return;
+  const st = Math.max(m.bb.width, m.bb.height) * 0.05;
+  const go = () => { applyLogo(sel, m); build(frameNow(), false, false); };
+  const mv = (dx, dy) => () => { pushHist(); m.dx = (m.dx||0) + dx*st; m.dy = (m.dy||0) + dy*st; go(); };
+  const r = document.createElement('div'); r.className = 'row'; r.style.direction = 'ltr'; r.style.justifyContent = 'center';
+  r.append(btn('◀', mv(-1,0)), btn('▲', mv(0,-1)), btn('▼', mv(0,1)), btn('▶', mv(1,0)), btn('مرکز', () => { pushHist(); m.dx = m.dy = 0; go(); }));
+  box.appendChild(r);
+}
+function arcCubics(x1,y1,rx,ry,phi,fa,fs,x2,y2){
+  if(!rx || !ry || (x1===x2 && y1===y2)) return [[x1,y1,x2,y2,x2,y2]];
+  rx = Math.abs(rx); ry = Math.abs(ry);
+  const r = phi*Math.PI/180, co = Math.cos(r), si = Math.sin(r), dx = (x1-x2)/2, dy = (y1-y2)/2, xp = co*dx + si*dy, yp = -si*dx + co*dy;
+  const lam = xp*xp/(rx*rx) + yp*yp/(ry*ry); if(lam > 1){ rx *= Math.sqrt(lam); ry *= Math.sqrt(lam); }
+  const sg = fa === fs ? -1 : 1, nu = rx*rx*ry*ry - rx*rx*yp*yp - ry*ry*xp*xp, de = rx*rx*yp*yp + ry*ry*xp*xp;
+  const k = sg*Math.sqrt(Math.max(0, nu/de)), cxp = k*rx*yp/ry, cyp = -k*ry*xp/rx;
+  const cx = co*cxp - si*cyp + (x1+x2)/2, cy = si*cxp + co*cyp + (y1+y2)/2;
+  const ang = (ux,uy,vx,vy) => Math.atan2(ux*vy - uy*vx, ux*vx + uy*vy);
+  const t1 = ang(1,0,(xp-cxp)/rx,(yp-cyp)/ry); let dt = ang((xp-cxp)/rx,(yp-cyp)/ry,(-xp-cxp)/rx,(-yp-cyp)/ry);
+  if(!fs && dt > 0) dt -= 2*Math.PI; if(fs && dt < 0) dt += 2*Math.PI;
+  const n = Math.ceil(Math.abs(dt)/(Math.PI/2)), d = dt/n, t = 4/3*Math.tan(d/4), out = [];
+  const pt = a => [cx + rx*Math.cos(a)*co - ry*Math.sin(a)*si, cy + rx*Math.cos(a)*si + ry*Math.sin(a)*co];
+  const dv = a => [-rx*Math.sin(a)*co - ry*Math.cos(a)*si, -rx*Math.sin(a)*si + ry*Math.cos(a)*co];
+  for(let j = 0; j < n; j++){
+    const a1 = t1 + j*d, a2 = a1 + d, p1 = pt(a1), p2 = pt(a2), d1 = dv(a1), d2 = dv(a2);
+    out.push([p1[0]+t*d1[0], p1[1]+t*d1[1], p2[0]-t*d2[0], p2[1]-t*d2[1], p2[0], p2[1]]);
+  }
+  return out;
+}
+function shapeD(el){
+  const t = el.tagName.toLowerCase(), g = a => parseFloat(el.getAttribute(a)) || 0;
+  if(t === 'path') return el.getAttribute('d') || '';
+  if(t === 'rect'){
+    const x = g('x'), y = g('y'), w = g('width'), h = g('height'); let rx = g('rx'), ry = g('ry');
+    if(!rx && ry) rx = ry; if(!ry && rx) ry = rx; rx = Math.min(rx, w/2); ry = Math.min(ry, h/2);
+    return (rx || ry) ? `M${x+rx} ${y}H${x+w-rx}A${rx} ${ry} 0 0 1 ${x+w} ${y+ry}V${y+h-ry}A${rx} ${ry} 0 0 1 ${x+w-rx} ${y+h}H${x+rx}A${rx} ${ry} 0 0 1 ${x} ${y+h-ry}V${y+ry}A${rx} ${ry} 0 0 1 ${x+rx} ${y}Z` : `M${x} ${y}H${x+w}V${y+h}H${x}Z`;
+  }
+  if(t === 'circle' || t === 'ellipse'){
+    const cx = g('cx'), cy = g('cy'), rx = t === 'circle' ? g('r') : g('rx'), ry = t === 'circle' ? g('r') : g('ry');
+    return `M${cx-rx} ${cy}A${rx} ${ry} 0 1 0 ${cx+rx} ${cy}A${rx} ${ry} 0 1 0 ${cx-rx} ${cy}Z`;
+  }
+  if(t === 'line') return `M${g('x1')} ${g('y1')}L${g('x2')} ${g('y2')}`;
+  const pts = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number); let d = '';
+  for(let i = 0; i + 1 < pts.length; i += 2) d += (i ? 'L' : 'M') + pts[i] + ' ' + pts[i+1];
+  return d + (t === 'polygon' ? 'Z' : '');
+}
+function pathToBez(d, tp){
+  const tk = d.match(/[a-df-z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:e[-+]?\d+)?/gi) || [];
+  let i = 0, cmd = '', x = 0, y = 0, sx = 0, sy = 0, lc = null, lq = null, cur = null; const subs = [];
+  const num = () => parseFloat(tk[i++]), nd = (px,py) => ({p:[px,py], ci:[px,py], co:[px,py]});
+  const start = (px,py) => { cur = {nodes:[nd(px,py)], c:false}; subs.push(cur); };
+  const last = () => cur.nodes[cur.nodes.length-1];
+  const cub = (a,b,c,e,px,py) => { last().co = [a,b]; const m = nd(px,py); m.ci = [c,e]; cur.nodes.push(m); x = px; y = py; };
+  const lin = (px,py) => { last().co = last().p; cur.nodes.push(nd(px,py)); x = px; y = py; };
+  while(i < tk.length){
+    if(/[a-z]/i.test(tk[i])) cmd = tk[i++];
+    const rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase(), ax = rel ? x : 0, ay = rel ? y : 0;
+    if(C === 'Z'){ if(cur) cur.c = true; x = sx; y = sy; lc = lq = null; continue; }
+    if(C === 'M'){ x = ax + num(); y = ay + num(); sx = x; sy = y; start(x,y); cmd = rel ? 'l' : 'L'; lc = lq = null; continue; }
+    if(!cur || cur.c) start(x,y);
+    if(C === 'L'){ lin(ax + num(), ay + num()); lc = lq = null; }
+    else if(C === 'H'){ lin(ax + num(), y); lc = lq = null; }
+    else if(C === 'V'){ lin(x, ay + num()); lc = lq = null; }
+    else if(C === 'C'){ const a = ax+num(), b = ay+num(), c = ax+num(), e = ay+num(), px = ax+num(), py = ay+num(); cub(a,b,c,e,px,py); lc = [c,e]; lq = null; }
+    else if(C === 'S'){ const r = lc ? [2*x-lc[0], 2*y-lc[1]] : [x,y], c = ax+num(), e = ay+num(), px = ax+num(), py = ay+num(); cub(r[0],r[1],c,e,px,py); lc = [c,e]; lq = null; }
+    else if(C === 'Q' || C === 'T'){
+      const q = C === 'Q' ? [ax+num(), ay+num()] : (lq ? [2*x-lq[0], 2*y-lq[1]] : [x,y]), px = ax+num(), py = ay+num(), x0 = x, y0 = y;
+      cub(x0+2/3*(q[0]-x0), y0+2/3*(q[1]-y0), px+2/3*(q[0]-px), py+2/3*(q[1]-py), px, py); lq = q; lc = null;
+    }
+    else if(C === 'A'){ const rx = num(), ry = num(), ph = num(), fa = num(), fs = num(), px = ax+num(), py = ay+num(); arcCubics(x,y,rx,ry,ph,fa,fs,px,py).forEach(s => cub(...s)); lc = lq = null; }
+    else i++;
+  }
+  return subs.filter(s => s.nodes.length > 1).map(s => {
+    const n = s.nodes, f = n[0], l = n[n.length-1];
+    if(s.c && n.length > 2 && Math.hypot(f.p[0]-l.p[0], f.p[1]-l.p[1]) < 1e-6){ f.ci = l.ci; n.pop(); }
+    const P = n.map(k => tp(...k.p)), rl = (a,p) => { const t = tp(...a); return [+(t[0]-p[0]).toFixed(2), +(t[1]-p[1]).toFixed(2)]; };
+    return {c:s.c, v:P, i:n.map((k,j) => rl(k.ci, P[j])), o:n.map((k,j) => rl(k.co, P[j]))};
+  });
+}
+const rgbOf = c => { const q = (c || '').match(/[\d.]+/g); return q ? [q[0]/255, q[1]/255, q[2]/255, q[3] != null ? +q[3] : 1] : [0.5,0.5,0.5,1]; };
+function gStops(g, svg){
+  let s = [...g.querySelectorAll('stop')], h = g;
+  for(let k = 0; !s.length && k < 5; k++){
+    const r = h.getAttribute('href') || h.getAttribute('xlink:href'); if(!r) break;
+    h = svg.querySelector('[id="' + r.slice(1) + '"]'); if(!h) break; s = [...h.querySelectorAll('stop')];
+  }
+  return s;
+}
+function paint(el, color, opa, op, M, ox, oy, svg, st){
+  if(!color || color === 'none') return null;
+  const tpm = (x,y) => [+(M.a*x + M.c*y + M.e - ox).toFixed(2), +(M.b*x + M.d*y + M.f - oy).toFixed(2)];
+  if(color.startsWith('url')){
+    const id = (color.match(/#([^"')]+)/) || [])[1], g = id && svg.querySelector('[id="' + id + '"]');
+    if(!g || st) return null;
+    const ss = gStops(g, svg); if(!ss.length) return null;
+    const bb = el.getBBox(), box = g.getAttribute('gradientUnits') !== 'userSpaceOnUse', lin = g.tagName === 'linearGradient';
+    const gt = g.gradientTransform && g.gradientTransform.baseVal.consolidate(), G = gt && !box ? gt.matrix : null;
+    const v = (a, d, ax) => { const s = g.getAttribute(a); if(s == null) return d; let n = parseFloat(s); if(/%/.test(s)) n /= 100; return box ? (ax === 'x' ? bb.x + n*bb.width : ax === 'y' ? bb.y + n*bb.height : n*(bb.width+bb.height)/2) : n; };
+    let p1, p2;
+    if(lin){ p1 = [v('x1', bb.x, 'x'), v('y1', bb.y, 'y')]; p2 = [v('x2', bb.x + bb.width, 'x'), v('y2', bb.y, 'y')]; }
+    else { const c = [v('cx', bb.x + bb.width/2, 'x'), v('cy', bb.y + bb.height/2, 'y')], r = v('r', (bb.width+bb.height)/4, 'r'); p1 = c; p2 = [c[0] + r, c[1]]; }
+    if(G){ const f = p => [G.a*p[0] + G.c*p[1] + G.e, G.b*p[0] + G.d*p[1] + G.f]; p1 = f(p1); p2 = f(p2); }
+    const cols = [], als = [];
+    ss.forEach(s => {
+      const oa = s.getAttribute('offset') || '0', cs = getComputedStyle(s); let o = parseFloat(oa) || 0; if(/%/.test(oa)) o /= 100;
+      const c = rgbOf(cs.stopColor), a = parseFloat(cs.stopOpacity); cols.push(o, c[0], c[1], c[2]); als.push(o, isNaN(a) ? 1 : a);
+    });
+    const hasA = als.some((x,i) => i % 2 && x < 1);
+    return {ty:'gf', o:P0(op*opa*100), g:{p:ss.length, k:{a:0, k: hasA ? cols.concat(als) : cols}}, s:P0(tpm(...p1)), e:P0(tpm(...p2)), t: lin ? 1 : 2};
+  }
+  const c = rgbOf(color);
+  return {ty: st ? 'st' : 'fl', c:P0([c[0], c[1], c[2], 1]), o:P0(c[3]*opa*op*100)};
+}
+function svgToShapes(txt){
+  const host = document.createElement('div'); host.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden';
+  host.innerHTML = txt; document.body.appendChild(host);
+  try{
+    const svg = host.querySelector('svg'); if(!svg) return null;
+    const vb = svg.viewBox.baseVal, hv = vb && vb.width > 0;
+    const iw = hv ? vb.width : (parseFloat(svg.getAttribute('width')) || 300), ih = hv ? vb.height : (parseFloat(svg.getAttribute('height')) || 300);
+    const ox = hv ? vb.x : 0, oy = hv ? vb.y : 0, inv = svg.getScreenCTM().inverse(), items = [];
+    svg.querySelectorAll('path,rect,circle,ellipse,polygon,polyline,line').forEach(el => {
+      if(el.closest('defs,clipPath,mask,symbol,pattern')) return;
+      const cs = getComputedStyle(el); if(cs.display === 'none') return;
+      let op = 1; for(let n = el; n && n !== svg.parentElement; n = n.parentElement) op *= parseFloat(getComputedStyle(n).opacity);
+      const M = inv.multiply(el.getScreenCTM()), sc = Math.hypot(M.a, M.b) || 1;
+      const tp = (x,y) => [+(M.a*x + M.c*y + M.e - ox).toFixed(2), +(M.b*x + M.d*y + M.f - oy).toFixed(2)];
+      const it = pathToBez(shapeD(el), tp).map(s => ({ty:'sh', ks:{a:0, k:s}})); if(!it.length) return;
+      const fl = paint(el, cs.fill, parseFloat(cs.fillOpacity), op, M, ox, oy, svg, false), sw = parseFloat(cs.strokeWidth) * sc;
+      const sk = sw > 0 ? paint(el, cs.stroke, parseFloat(cs.strokeOpacity), op, M, ox, oy, svg, true) : null;
+      if(!fl && !sk) return;
+      if(fl) fl.r = cs.fillRule === 'evenodd' ? 2 : 1;
+      if(sk){ sk.w = P0(sw); sk.lc = {butt:1, round:2, square:3}[cs.strokeLinecap] || 1; sk.lj = {miter:1, round:2, bevel:3}[cs.strokeLinejoin] || 1; sk.ml = 4; }
+      items.push({ty:'gr', nm:el.id || el.tagName, it:[...it, ...(sk ? [sk] : []), ...(fl ? [fl] : []), {ty:'tr', p:P0([0,0]), a:P0([0,0]), s:P0([100,100]), r:P0(0), o:P0(100)}]});
+    });
+    return {items:items.reverse(), iw, ih};
+  } finally { host.remove(); }
+}
+
+/* ---------- controls ---------- */
+$('file').onchange = e => { if(e.target.files[0]) loadFile(e.target.files[0]); e.target.value=''; };
+const dz = $('drop');
+['dragenter','dragover'].forEach(n => dz.addEventListener(n, e => { e.preventDefault(); dz.classList.add('over'); }));
+['dragleave','drop'].forEach(n => dz.addEventListener(n, e => { e.preventDefault(); dz.classList.remove('over'); }));
+dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if(f) loadFile(f); });
+$('play').onclick = () => { if(anim) anim.isPaused ? anim.play() : anim.pause(); };
+$('fr').oninput = e => { if(anim){ anim.pause(); anim.goToAndStop(+e.target.value, true); } };
+$('speed').onchange = e => { if(anim) anim.setSpeed(+e.target.value); };
+$('loop').onchange = e => { if(anim) anim.loop = e.target.checked; };
+$('bg').oninput = e => { $('stagebox').style.backgroundColor = e.target.value; $('stagebox').style.backgroundImage = 'none'; };
+$('reset').onclick = () => { if(!orig) return; pushHist(); model = JSON.parse(orig); sel = null; build(0, true, true); say('به حالت اولیه برگشت.'); };
+
+async function save(name, data){
+  if(!model){ say('اول یک فایل باز کن.'); return; }
+  try{
+    const dl = await claude.use('downloads');
+    if(!dl){ say('ذخیره‌سازی در این نمایشگر در دسترس نیست.'); return; }
+    let d = data(); if(typeof d === 'string') d = new TextEncoder().encode(d);
+    await dl.save({filename:name, data:d});
+    say('ذخیره شد (' + (d.byteLength/1024).toFixed(1) + ' KB).');
+  }catch(e){
+    say(e && e.code==='rejected_extension' ? 'ذخیرهٔ .tgs اینجا مجاز نیست؛ JSON را ذخیره کن.' : e && e.code==='declined' ? 'لغو شد.' : 'ذخیره انجام نشد.');
+  }
+}
+$('exJson').onclick = () => save('animation.json', () => JSON.stringify(model));
+$('exTgs').onclick = () => save('sticker.tgs', () => pako.gzip(JSON.stringify(model)));
+$('exTxt').onclick = () => save('animation.txt', () => JSON.stringify(model));
+$('exCopy').onclick = async () => {
+  if(!model){ say('اول یک فایل باز کن.'); return; }
+  const s = JSON.stringify(model), kb = (s.length/1024).toFixed(1);
+  try{ await navigator.clipboard.writeText(s); say('JSON کپی شد (' + kb + ' KB).'); }
+  catch(e){ const t = document.createElement('textarea'); t.value = s; document.body.appendChild(t); t.select(); let ok = false; try{ ok = document.execCommand('copy'); }catch(_){} t.remove(); say(ok ? 'JSON کپی شد (' + kb + ' KB).' : 'کپی انجام نشد.'); }
+};
+</script>
+</body>
+</html>
